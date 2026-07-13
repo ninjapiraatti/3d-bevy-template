@@ -25,9 +25,9 @@ Cargo workspace, window opens, tooling in place.
 
 **Verify**
 
-- [ ] `cargo run` opens a window with a flat ground plane, a light, and a camera.
-- [ ] `cargo clippy --all-targets -- -D warnings` and `cargo fmt --check` pass.
-- [ ] Incremental rebuild after a one-line change is under ~5 s.
+- [x] `cargo run` opens a window with a flat ground plane, a light, and a camera.
+- [x] `cargo clippy --all-targets -- -D warnings` and `cargo fmt --check` pass.
+- [x] Incremental rebuild after a one-line change is under ~5 s. (0.89 s measured)
 
 ## Step 1 — App states and menu shell
 
@@ -40,10 +40,11 @@ Game-state plumbing everything else hangs off.
 
 **Verify**
 
-- [ ] Full loop works: menu → new game → pause → quit to menu → new game again.
-- [ ] Second "new game" produces no duplicate entities or leaked state
-      (log entity counts on state entry to confirm).
-- [ ] Game simulation is actually frozen while paused.
+- [x] Full loop works: menu → new game → pause → quit to menu → new game again.
+- [x] Second "new game" produces no duplicate entities or leaked state
+      (log entity counts on state entry to confirm; counts plateau at 384
+      after first-cycle engine warm-up).
+- [x] Game simulation is actually frozen while paused.
 
 ## Step 2 — Asset conventions and Blender scene import
 
@@ -214,8 +215,8 @@ The squad/strategy layer on top of everything prior.
 
 | Concern | Candidates | Decided in |
 |---|---|---|
-| Blender→Bevy metadata | Blenvy vs naming convention | Step 2 |
-| Physics | avian3d vs rapier | Step 2 |
+| Blender→Bevy metadata | **Decided (step 2): custom properties via glTF extras.** Blenvy is unmaintained (last release 2024-08, Bevy 0.14). | Step 2 |
+| Physics | **Decided (step 2): avian3d 0.7** — targets Bevy 0.19 exactly, ECS-native. (bevy_rapier3d 0.35 also current; revisit only if avian blocks us.) | Step 2 |
 | Input | leafwing-input-manager vs hand-rolled | Step 3 |
 | Save/load | moonshine-save vs bevy_save vs hand-rolled | Step 5 |
 | Navmesh | vleue_navigator vs oxidized_navigation | Step 6 |
