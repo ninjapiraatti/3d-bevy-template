@@ -10,4 +10,5 @@ workspace = true
 [dependencies]
 bevy = { workspace = true }
 avian3d = { workspace = true }
+leafwing-input-manager = { workspace = true }
 serde_json = { workspace = true }

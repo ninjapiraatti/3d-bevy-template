@@ -1,6 +1,9 @@
 use avian3d::PhysicsPlugins;
 use bevy::prelude::*;
-use template_core::{AppStatePlugin, DevScenePlugin, LevelPlugin, MenuPlugin};
+use template_core::{
+    AppStatePlugin, ControlsPlugin, DevScenePlugin, LevelPlugin, MenuPlugin, PlayerPlugin,
+    ThirdPersonCameraPlugin,
+};
 
 fn main() {
     App::new()
@@ -18,6 +21,14 @@ fn main() {
             }),
             PhysicsPlugins::default(),
         ))
-        .add_plugins((AppStatePlugin, MenuPlugin, LevelPlugin, DevScenePlugin))
+        .add_plugins((
+            AppStatePlugin,
+            MenuPlugin,
+            LevelPlugin,
+            DevScenePlugin,
+            ControlsPlugin,
+            PlayerPlugin,
+            ThirdPersonCameraPlugin,
+        ))
         .run();
 }

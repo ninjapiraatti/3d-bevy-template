@@ -63,11 +63,12 @@ The Blender-as-level-editor pipeline.
 
 **Verify**
 
-- [ ] A test level authored in Blender (ground, ramps, obstacles, a spawn-point
-      marker) loads and renders correctly with `cargo run`.
-- [ ] Re-exporting from Blender and re-running shows the change — no manual
+- [x] A test level authored in Blender (ground, ramps, obstacles, a spawn-point
+      marker) loads and renders correctly with `cargo run`. (owner-authored
+      `my_level.glb`; script-generated `test_level.glb` also available)
+- [x] Re-exporting from Blender and re-running shows the change — no manual
       conversion steps in between.
-- [ ] Named markers from Blender are queryable as entities/components in Bevy.
+- [x] Named markers from Blender are queryable as entities/components in Bevy.
 
 ## Step 3 — Third-person character and camera
 
@@ -217,7 +218,8 @@ The squad/strategy layer on top of everything prior.
 |---|---|---|
 | Blender→Bevy metadata | **Decided (step 2): custom properties via glTF extras.** Blenvy is unmaintained (last release 2024-08, Bevy 0.14). | Step 2 |
 | Physics | **Decided (step 2): avian3d 0.7** — targets Bevy 0.19 exactly, ECS-native. (bevy_rapier3d 0.35 also current; revisit only if avian blocks us.) | Step 2 |
-| Input | leafwing-input-manager vs hand-rolled | Step 3 |
+| Input | **Decided (step 3): leafwing-input-manager 0.21** — targets Bevy 0.19; bindings live in `PlayerAction::default_input_map`. (bevy_enhanced_input 0.26 also current; revisit at step 9 if rebinding UI fits it better.) | Step 3 |
+| Character controller | **Decided (step 3): hand-rolled** dynamic capsule + velocity control on avian — no jumps in genre scope. bevy-tnua 0.32 (Bevy 0.19-ready) is the upgrade path if feel demands it. | Step 3 |
 | Save/load | moonshine-save vs bevy_save vs hand-rolled | Step 5 |
 | Navmesh | vleue_navigator vs oxidized_navigation | Step 6 |
 | AI | big-brain vs bevy_behave | Step 7 |

@@ -1,6 +1,6 @@
-//! Placeholder in-game props: light, camera and a spinning cube. Level
-//! geometry comes from the glTF level; later steps replace the camera and
-//! cube with the real third-person rig and player character.
+//! Placeholder in-game props: light and a spinning cube (the visible proof
+//! that pausing freezes the simulation). Level geometry comes from the glTF
+//! level; the camera belongs to the third-person rig.
 
 use bevy::prelude::*;
 
@@ -38,11 +38,6 @@ fn spawn_dev_scene(
             ..default()
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.9, 0.4, 0.0)),
-    ));
-    commands.spawn((
-        DespawnOnExit(AppState::InGame),
-        Camera3d::default(),
-        Transform::from_xyz(-6.0, 6.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 }
 
