@@ -4,6 +4,7 @@
 //! from the glTF level; the camera belongs to the third-person rig.
 
 use bevy::prelude::*;
+use moonshine_save::prelude::Save;
 
 use crate::animation::CharacterAnimations;
 use crate::levels::PlayerSpawn;
@@ -13,29 +14,31 @@ pub struct DevScenePlugin;
 
 impl Plugin for DevScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::InGame), spawn_dev_scene)
+        app.register_type::<Spinner>()
+            .add_systems(OnEnter(AppState::InGame), spawn_dev_scene)
             .add_systems(
                 Update,
-                (spin, spawn_reuse_demo).run_if(in_state(AppState::InGame)),
+                (spin, hydrate_spinner, spawn_reuse_demo).run_if(in_state(AppState::InGame)),
             );
     }
 }
 
-#[derive(Component)]
-struct Spinner;
+/// The cube's rotation is the roadmap's "one piece of arbitrary gameplay
+/// state" in save files: saving mid-spin and loading must resume the angle.
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
+pub(crate) struct Spinner;
 
-fn spawn_dev_scene(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    commands.spawn((
-        DespawnOnExit(AppState::InGame),
-        Spinner,
-        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-        MeshMaterial3d(materials.add(Color::srgb(0.6, 0.4, 0.8))),
-        Transform::from_xyz(0.0, 1.5, 0.0),
-    ));
+fn spawn_dev_scene(mut commands: Commands, spinners: Query<(), With<Spinner>>) {
+    // A loaded save may have brought the spinner along already.
+    if spinners.is_empty() {
+        commands.spawn((
+            Name::new("Spinner"),
+            Spinner,
+            Transform::from_xyz(0.0, 1.5, 0.0),
+        ));
+    }
     commands.spawn((
         DespawnOnExit(AppState::InGame),
         DirectionalLight {
@@ -45,6 +48,22 @@ fn spawn_dev_scene(
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.9, 0.4, 0.0)),
     ));
+}
+
+/// Rebuilds the cube's visuals; never part of save data.
+fn hydrate_spinner(
+    mut commands: Commands,
+    spinners: Query<Entity, (With<Spinner>, Without<Mesh3d>)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for entity in &spinners {
+        commands.entity(entity).insert((
+            DespawnOnExit(AppState::InGame),
+            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
+            MeshMaterial3d(materials.add(Color::srgb(0.6, 0.4, 0.8))),
+        ));
+    }
 }
 
 #[derive(Component)]

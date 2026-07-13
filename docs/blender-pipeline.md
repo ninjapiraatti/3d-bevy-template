@@ -58,6 +58,8 @@ Gameplay data is authored as **object custom properties**
 | Property | Value | Effect in Bevy |
 |---|---|---|
 | `marker` | `player_spawn` | `PlayerSpawn` component (use on an empty) |
+| `marker` | `npc_spawn` | An NPC is spawned here (use on an empty) |
+| `marker` | `navmesh` | The mesh becomes the landmass navmesh (walkable area) and is hidden at runtime. Author it as a simple mesh over walkable ground, kept an agent-radius (~0.4 m) away from obstacles; polygons must share vertices to count as connected. |
 | `collider` | `trimesh` | Static physics collider generated from the object's meshes |
 
 Property values must be strings. Unknown values log a warning at load rather

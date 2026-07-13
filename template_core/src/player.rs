@@ -8,6 +8,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use moonshine_save::prelude::Save;
 
 use crate::animation::CharacterAnimations;
 use crate::camera_rig::ThirdPersonCamera;
@@ -17,7 +18,11 @@ use crate::states::{AppState, PauseState};
 
 pub struct PlayerPlugin;
 
-#[derive(Component)]
+/// Persistent player marker; everything else on the entity is rebuilt by
+/// [`hydrate_player`], whether it was just spawned or loaded from a save.
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct Player;
 
 pub const WALK_SPEED: f32 = 3.0;
@@ -30,11 +35,12 @@ const KILL_HEIGHT: f32 = -50.0;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (spawn_player, respawn_fallen).run_if(in_state(AppState::InGame)),
-        )
-        .add_systems(Update, move_player.run_if(in_state(PauseState::Running)));
+        app.register_type::<Player>()
+            .add_systems(
+                Update,
+                (spawn_player, hydrate_player, respawn_fallen).run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(Update, move_player.run_if(in_state(PauseState::Running)));
     }
 }
 
@@ -43,12 +49,13 @@ fn spawn_height() -> f32 {
 }
 
 /// Waits for the level's [`PlayerSpawn`] marker (scene instances appear
-/// asynchronously), then spawns the player once.
+/// asynchronously), then spawns the player's persistent core once. A player
+/// loaded from a save arrives instead of this; either way [`hydrate_player`]
+/// completes the entity.
 fn spawn_player(
     mut commands: Commands,
     players: Query<(), With<Player>>,
     spawn_points: Query<&GlobalTransform, With<PlayerSpawn>>,
-    assets: Res<AssetServer>,
 ) {
     if !players.is_empty() {
         return;
@@ -57,33 +64,54 @@ fn spawn_player(
         return;
     };
     let position = spawn.translation() + Vec3::Y * spawn_height();
-    commands
-        .spawn((
-            Name::new("Player"),
-            Player,
-            DespawnOnExit(AppState::InGame),
-            Transform::from_translation(position),
-            Visibility::default(),
-            RigidBody::Dynamic,
-            Collider::capsule(CAPSULE_RADIUS, CAPSULE_LENGTH),
-            LockedAxes::ROTATION_LOCKED,
-            Friction::new(0.3),
-            PlayerAction::default_input_map(),
-        ))
-        .with_children(|parent| {
-            // Model origin is at the feet; the capsule origin is its center.
-            // KayKit characters face +Z, entity forward is Bevy's -Z: yaw 180°.
-            parent.spawn((
-                Name::new("PlayerModel"),
-                WorldAssetRoot(assets.load(
-                    GltfAssetLabel::Scene(0).from_asset("characters/adventurers/Knight.glb"),
-                )),
-                CharacterAnimations::kaykit_adventurer(&assets),
-                Transform::from_xyz(0.0, -(CAPSULE_LENGTH / 2.0 + CAPSULE_RADIUS), 0.0)
-                    .with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
-            ));
-        });
+    commands.spawn((
+        Name::new("Player"),
+        Player,
+        Transform::from_translation(position),
+    ));
     info!("player spawned at {position}");
+}
+
+/// Rebuilds the runtime half of any player that lacks it — physics, input,
+/// and the character model are never part of save data. Waits for the level
+/// (via its [`PlayerSpawn`] marker) so a loaded player doesn't drop through
+/// still-loading geometry.
+fn hydrate_player(
+    mut commands: Commands,
+    players: Query<Entity, (With<Player>, Without<Collider>)>,
+    spawn_points: Query<(), With<PlayerSpawn>>,
+    assets: Res<AssetServer>,
+) {
+    if spawn_points.is_empty() {
+        return;
+    }
+    for entity in &players {
+        commands
+            .entity(entity)
+            .insert((
+                DespawnOnExit(AppState::InGame),
+                Visibility::default(),
+                RigidBody::Dynamic,
+                Collider::capsule(CAPSULE_RADIUS, CAPSULE_LENGTH),
+                LockedAxes::ROTATION_LOCKED,
+                Friction::new(0.3),
+                LinearVelocity::default(),
+                PlayerAction::default_input_map(),
+            ))
+            .with_children(|parent| {
+                // Model origin is at the feet; the capsule origin is its center.
+                // KayKit characters face +Z, entity forward is Bevy's -Z: yaw 180°.
+                parent.spawn((
+                    Name::new("PlayerModel"),
+                    WorldAssetRoot(assets.load(
+                        GltfAssetLabel::Scene(0).from_asset("characters/adventurers/Knight.glb"),
+                    )),
+                    CharacterAnimations::kaykit_adventurer(&assets),
+                    Transform::from_xyz(0.0, -(CAPSULE_LENGTH / 2.0 + CAPSULE_RADIUS), 0.0)
+                        .with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
+                ));
+            });
+    }
 }
 
 fn move_player(

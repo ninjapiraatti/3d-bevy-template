@@ -11,4 +11,7 @@ workspace = true
 bevy = { workspace = true }
 avian3d = { workspace = true }
 leafwing-input-manager = { workspace = true }
+moonshine-save = { workspace = true }
+bevy_world_serialization = { workspace = true }
+bevy_landmass = { workspace = true }
 serde_json = { workspace = true }

@@ -2,7 +2,7 @@ use avian3d::PhysicsPlugins;
 use bevy::prelude::*;
 use template_core::{
     AppStatePlugin, CharacterAnimationPlugin, ControlsPlugin, DevScenePlugin, LevelPlugin,
-    MenuPlugin, PlayerPlugin, ThirdPersonCameraPlugin,
+    MenuPlugin, NavigationPlugin, NpcPlugin, PlayerPlugin, SavePlugin, ThirdPersonCameraPlugin,
 };
 
 fn main() {
@@ -30,6 +30,9 @@ fn main() {
             PlayerPlugin,
             CharacterAnimationPlugin,
             ThirdPersonCameraPlugin,
+            SavePlugin,
+            NavigationPlugin,
+            NpcPlugin,
         ))
         .run();
 }

@@ -5,6 +5,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use moonshine_save::prelude::Save;
 
 use crate::controls::PlayerAction;
 use crate::player::Player;
@@ -12,7 +13,11 @@ use crate::states::{AppState, PauseState};
 
 pub struct ThirdPersonCameraPlugin;
 
-#[derive(Component)]
+/// Persistent camera-rig state; the render-side components are rebuilt by
+/// [`hydrate_camera`] for fresh spawns and loaded saves alike.
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(Save)]
 pub struct ThirdPersonCamera {
     pub yaw: f32,
     pub pitch: f32,
@@ -41,7 +46,9 @@ const COLLISION_MARGIN: f32 = 0.25;
 
 impl Plugin for ThirdPersonCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::InGame), spawn_camera)
+        app.register_type::<ThirdPersonCamera>()
+            .add_systems(OnEnter(AppState::InGame), spawn_camera)
+            .add_systems(Update, hydrate_camera.run_if(in_state(AppState::InGame)))
             .add_systems(
                 Update,
                 (orbit_and_zoom, follow_player)
@@ -51,14 +58,28 @@ impl Plugin for ThirdPersonCameraPlugin {
     }
 }
 
-fn spawn_camera(mut commands: Commands) {
+/// Spawns the rig's persistent core unless a loaded save brought one along.
+fn spawn_camera(mut commands: Commands, cameras: Query<(), With<ThirdPersonCamera>>) {
+    if !cameras.is_empty() {
+        return;
+    }
     commands.spawn((
         Name::new("ThirdPersonCamera"),
-        Camera3d::default(),
         ThirdPersonCamera::default(),
-        DespawnOnExit(AppState::InGame),
         Transform::from_xyz(-6.0, 6.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
+}
+
+/// Rebuilds the render side of the rig; never part of save data.
+fn hydrate_camera(
+    mut commands: Commands,
+    cameras: Query<Entity, (With<ThirdPersonCamera>, Without<Camera3d>)>,
+) {
+    for entity in &cameras {
+        commands
+            .entity(entity)
+            .insert((Camera3d::default(), DespawnOnExit(AppState::InGame)));
+    }
 }
 
 fn orbit_and_zoom(

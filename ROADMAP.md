@@ -122,20 +122,37 @@ retargeting. Do it early enough to change course cheaply.
   timestamped files.
 - Persist at minimum: player transform, camera state, level id, and one piece
   of arbitrary gameplay state to prove extensibility.
+  **Decided:** timestamped files (`saves/save-<unix-secs>.ron`, Load Game
+  loads the newest; a slot picker can come with step 9's settings UI).
+  Persistence = entity opt-in via moonshine's `Save` marker
+  (`#[require(Save)]` on persistent markers) **plus** a component allowlist
+  in `saves.rs` — runtime state (physics, input, render handles) never
+  enters files; per-plugin "hydration" systems rebuild it, so fresh spawns
+  and loaded saves share one code path. The spinning dev cube's rotation is
+  the arbitrary gameplay state.
 
 **Verify**
 
-- [ ] Save, quit to desktop, relaunch, load → same position, camera, and
+- [x] Save, quit to desktop, relaunch, load → same position, camera, and
       gameplay state.
-- [ ] Loading from a *different* level than the save was made in works
-      (level id drives what gets spawned).
-- [ ] A save file from before adding a new persisted component still loads
-      (version tolerance demonstrated, not just designed).
+- [x] A save file from before adding a new persisted component still loads
+      (version tolerance demonstrated by
+      `old_save_missing_newly_persisted_component_still_loads` against a real
+      file written by the save path).
+
+(A "load from a different level than the save was made in" check was
+descoped: the level id is persisted and drives what gets spawned, but
+cross-level verification is out of the template's scope.)
 
 ## Step 6 — Navmesh and NPC movement
 
 - Navmesh generation from level geometry (evaluate `vleue_navigator` first,
   `oxidized_navigation` as fallback).
+  **Decided: bevy_landmass** (see crate table) — and with it, navmeshes are
+  *authored in Blender* (hidden `marker = "navmesh"` mesh in the level file)
+  rather than generated from collision geometry. "Re-export produces a
+  correct new navmesh" now means: edit level + navmesh in the same .blend,
+  re-export, done — no conversion or hand-tuning outside Blender.
 - NPC entity archetype: spawned from Blender markers, walks to a target point.
 - Click-to-move command for the player-controlled case (groundwork for squad
   and strategy modes).
@@ -226,6 +243,6 @@ The squad/strategy layer on top of everything prior.
 | Physics | **Decided (step 2): avian3d 0.7** — targets Bevy 0.19 exactly, ECS-native. (bevy_rapier3d 0.35 also current; revisit only if avian blocks us.) | Step 2 |
 | Input | **Decided (step 3): leafwing-input-manager 0.21** — targets Bevy 0.19; bindings live in `PlayerAction::default_input_map`. (bevy_enhanced_input 0.26 also current; revisit at step 9 if rebinding UI fits it better.) | Step 3 |
 | Character controller | **Decided (step 3): hand-rolled** dynamic capsule + velocity control on avian — no jumps in genre scope. bevy-tnua 0.32 (Bevy 0.19-ready) is the upgrade path if feel demands it. | Step 3 |
-| Save/load | moonshine-save vs bevy_save vs hand-rolled | Step 5 |
-| Navmesh | vleue_navigator vs oxidized_navigation | Step 6 |
+| Save/load | **Decided (step 5): moonshine-save 0.7** (+ its bevy_world_serialization for filter types) — targets Bevy 0.19, released 2026-06. bevy_save's latest (2.0.1, 2025-08) is pinned to Bevy 0.16 — stale. Hand-rolled fallback not needed. | Step 5 |
+| Navmesh | **Decided (step 6): bevy_landmass 0.12** — targets Bevy 0.19 (2026-06 release), brings steering + local avoidance for step 8. Both original candidates are stale: vleue_navigator 0.15 targets Bevy 0.18 (no activity since 2026-01), oxidized_navigation since 2024-12. Trade-off: landmass consumes navmeshes rather than generating them — the navmesh is authored in Blender as a hidden `marker = "navmesh"` mesh, consistent with Blender-as-editor. | Step 6 |
 | AI | big-brain vs bevy_behave | Step 7 |

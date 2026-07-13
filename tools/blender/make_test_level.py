@@ -11,6 +11,7 @@ tools/blender/export_level.py (see docs/blender-pipeline.md).
 import math
 import os
 
+import bmesh
 import bpy
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -65,6 +66,57 @@ bpy.ops.object.empty_add(type="PLAIN_AXES", location=(0, -8, 0.1))
 spawn = bpy.context.active_object
 spawn.name = "PlayerSpawn"
 spawn["marker"] = "player_spawn"
+
+bpy.ops.object.empty_add(type="PLAIN_AXES", location=(-1, 0, 0.1))
+npc = bpy.context.active_object
+npc.name = "NpcSpawn"
+npc["marker"] = "npc_spawn"
+
+
+def add_navmesh():
+    """Walkable-area mesh (hidden at runtime; marker = "navmesh").
+
+    A 1 m grid over the ground, skipping cells that touch an obstacle
+    footprint expanded by the agent radius. Shared vertices keep the
+    polygons connected, which landmass requires for pathing across them.
+    """
+    keepouts = [
+        # (center_x, center_y, half_x, half_y): pillars + agent margin
+        (-5, 4, 0.9, 0.9),
+        (-3, -5, 0.9, 0.9),
+        (2, 6, 0.9, 0.9),
+        # The ramp is solid; keep the flat navmesh out of its footprint.
+        (6, 0, 2.4, 4.4),
+    ]
+    half = 11  # 1 m inside the 24x24 ground edge
+    mesh = bpy.data.meshes.new("Navmesh")
+    bm = bmesh.new()
+    verts = {}
+
+    def vert(x, y):
+        if (x, y) not in verts:
+            verts[(x, y)] = bm.verts.new((x, y, 0.05))
+        return verts[(x, y)]
+
+    for x in range(-half, half):
+        for y in range(-half, half):
+            cx, cy = x + 0.5, y + 0.5
+            blocked = any(
+                abs(cx - kx) <= khx and abs(cy - ky) <= khy
+                for kx, ky, khx, khy in keepouts
+            )
+            if not blocked:
+                bm.faces.new(
+                    [vert(x, y), vert(x + 1, y), vert(x + 1, y + 1), vert(x, y + 1)]
+                )
+    bm.to_mesh(mesh)
+    bm.free()
+    obj = bpy.data.objects.new("Navmesh", mesh)
+    bpy.context.collection.objects.link(obj)
+    obj["marker"] = "navmesh"
+
+
+add_navmesh()
 
 os.makedirs(os.path.join(ROOT, "assets_src"), exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "assets_src", "test_level.blend"))

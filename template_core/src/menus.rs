@@ -2,6 +2,7 @@
 
 use bevy::prelude::*;
 
+use crate::saves::{LoadGame, SaveGame};
 use crate::states::{AppState, PauseState};
 
 pub struct MenuPlugin;
@@ -19,6 +20,7 @@ impl Plugin for MenuPlugin {
 enum MenuAction {
     NewGame,
     LoadGame,
+    SaveGame,
     Settings,
     Resume,
     QuitToMenu,
@@ -57,6 +59,7 @@ fn spawn_pause_menu(mut commands: Commands) {
         children![
             title("Paused"),
             button("Resume", MenuAction::Resume),
+            button("Save", MenuAction::SaveGame),
             button("Settings", MenuAction::Settings),
             button("Quit to Menu", MenuAction::QuitToMenu),
         ],
@@ -131,6 +134,8 @@ fn handle_menu_actions(
     // The pause sub-state's resources only exist while in-game.
     mut next_pause: Option<ResMut<NextState<PauseState>>>,
     mut app_exit: MessageWriter<AppExit>,
+    mut save_requests: MessageWriter<SaveGame>,
+    mut load_requests: MessageWriter<LoadGame>,
 ) {
     for (interaction, action) in &buttons {
         if *interaction != Interaction::Pressed {
@@ -138,7 +143,12 @@ fn handle_menu_actions(
         }
         match action {
             MenuAction::NewGame => next_app.set(AppState::Loading),
-            MenuAction::LoadGame => info!("Load Game: not implemented until roadmap step 5"),
+            MenuAction::LoadGame => {
+                load_requests.write(LoadGame);
+            }
+            MenuAction::SaveGame => {
+                save_requests.write(SaveGame);
+            }
             MenuAction::Settings => info!("Settings: not implemented until roadmap step 9"),
             MenuAction::Resume => {
                 if let Some(next) = next_pause.as_mut() {

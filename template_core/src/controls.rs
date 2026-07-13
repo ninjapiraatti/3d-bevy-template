@@ -19,6 +19,8 @@ pub enum PlayerAction {
     #[actionlike(DualAxis)]
     Move,
     Run,
+    /// Order agents to a clicked point (left mouse button by default).
+    CommandMove,
     /// Hold to orbit the camera (right mouse button by default).
     Orbit,
     #[actionlike(DualAxis)]
@@ -33,6 +35,7 @@ impl PlayerAction {
 
         map.insert_dual_axis(Self::Move, VirtualDPad::wasd());
         map.insert(Self::Run, KeyCode::ShiftLeft);
+        map.insert(Self::CommandMove, MouseButton::Left);
         map.insert(Self::Orbit, MouseButton::Right);
         map.insert_dual_axis(Self::OrbitDelta, MouseMove::default());
         map.insert_axis(Self::Zoom, MouseScrollAxis::Y);

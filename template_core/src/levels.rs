@@ -14,14 +14,19 @@ use crate::states::AppState;
 
 pub struct LevelPlugin;
 
-/// Asset path of the level to load when a game starts. Later steps (save/load)
-/// set this before entering [`AppState::Loading`].
-#[derive(Resource, Debug, Clone)]
+/// Asset path of the level to load when a game starts. Persisted in save
+/// files: loading a save restores this before [`AppState::Loading`] reads it,
+/// so the save's level is what gets spawned.
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
 pub struct CurrentLevel(pub String);
 
 impl Default for CurrentLevel {
     fn default() -> Self {
-        Self("levels/my_level.glb".into())
+        // The script-generated test level; it carries the navmesh and NPC
+        // markers that step 6 needs. `my_level.glb` works too once it has
+        // them (see docs/blender-pipeline.md).
+        Self("levels/test_level.glb".into())
     }
 }
 
@@ -33,9 +38,21 @@ struct LoadingLevel(Handle<WorldAsset>);
 #[derive(Component, Debug)]
 pub struct PlayerSpawn;
 
+/// A mesh describing the walkable area; authored in Blender as a (hidden at
+/// runtime) mesh object with `marker = "navmesh"`. Consumed by the
+/// navigation plugin.
+#[derive(Component, Debug)]
+pub struct NavMeshSource;
+
+/// Where an NPC appears; authored in Blender as an empty with
+/// `marker = "npc_spawn"`. Consumed by the NPC plugin.
+#[derive(Component, Debug)]
+pub struct NpcSpawn;
+
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<CurrentLevel>()
+        app.register_type::<CurrentLevel>()
+            .init_resource::<CurrentLevel>()
             .add_systems(OnEnter(AppState::Loading), start_level_load)
             .add_systems(
                 Update,
@@ -98,6 +115,14 @@ fn process_gltf_extras(
                     info!("marker player_spawn on {name:?} ({entity})");
                     commands.entity(entity).insert(PlayerSpawn);
                 }
+                "navmesh" => {
+                    info!("marker navmesh on {name:?} ({entity})");
+                    commands.entity(entity).insert(NavMeshSource);
+                }
+                "npc_spawn" => {
+                    info!("marker npc_spawn on {name:?} ({entity})");
+                    commands.entity(entity).insert(NpcSpawn);
+                }
                 other => warn!("unknown marker '{other}' on {name:?}"),
             }
         }
@@ -141,6 +166,15 @@ mod tests {
         let mut app = extras_app();
         let entity = spawn_with_extras(&mut app, r#"{"marker": "player_spawn"}"#);
         assert!(app.world().entity(entity).contains::<PlayerSpawn>());
+    }
+
+    #[test]
+    fn navigation_markers_become_components() {
+        let mut app = extras_app();
+        let navmesh = spawn_with_extras(&mut app, r#"{"marker": "navmesh"}"#);
+        let npc = spawn_with_extras(&mut app, r#"{"marker": "npc_spawn"}"#);
+        assert!(app.world().entity(navmesh).contains::<NavMeshSource>());
+        assert!(app.world().entity(npc).contains::<NpcSpawn>());
     }
 
     #[test]

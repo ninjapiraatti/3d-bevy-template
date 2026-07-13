@@ -9,4 +9,7 @@
 # Top-level .blend sources in assets_src/ stay committed.
 /assets_src/*/
 
+# Save files written by the demo game
+/saves/
+
 .DS_Store
