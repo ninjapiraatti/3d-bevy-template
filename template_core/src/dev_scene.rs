@@ -1,9 +1,12 @@
-//! Placeholder in-game props: light and a spinning cube (the visible proof
-//! that pausing freezes the simulation). Level geometry comes from the glTF
-//! level; the camera belongs to the third-person rig.
+//! Placeholder in-game props: light, a spinning cube (the visible proof
+//! that pausing freezes the simulation), and an idle Rogue (the proof that a
+//! second character reuses the player's animation set). Level geometry comes
+//! from the glTF level; the camera belongs to the third-person rig.
 
 use bevy::prelude::*;
 
+use crate::animation::CharacterAnimations;
+use crate::levels::PlayerSpawn;
 use crate::states::AppState;
 
 pub struct DevScenePlugin;
@@ -11,7 +14,10 @@ pub struct DevScenePlugin;
 impl Plugin for DevScenePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), spawn_dev_scene)
-            .add_systems(Update, spin.run_if(in_state(AppState::InGame)));
+            .add_systems(
+                Update,
+                (spin, spawn_reuse_demo).run_if(in_state(AppState::InGame)),
+            );
     }
 }
 
@@ -38,6 +44,36 @@ fn spawn_dev_scene(
             ..default()
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.9, 0.4, 0.0)),
+    ));
+}
+
+#[derive(Component)]
+struct ReuseDemo;
+
+/// Waits for the level's [`PlayerSpawn`] marker (like the player does), then
+/// places a second KayKit character beside it, sharing the player's animation
+/// libraries — the roadmap step 4 "second character, no code changes" check.
+fn spawn_reuse_demo(
+    mut commands: Commands,
+    demos: Query<(), With<ReuseDemo>>,
+    spawn_points: Query<&GlobalTransform, With<PlayerSpawn>>,
+    assets: Res<AssetServer>,
+) {
+    if !demos.is_empty() {
+        return;
+    }
+    let Ok(spawn) = spawn_points.single() else {
+        return;
+    };
+    commands.spawn((
+        Name::new("Rogue (animation reuse demo)"),
+        ReuseDemo,
+        DespawnOnExit(AppState::InGame),
+        WorldAssetRoot(
+            assets.load(GltfAssetLabel::Scene(0).from_asset("characters/adventurers/Rogue.glb")),
+        ),
+        CharacterAnimations::kaykit_adventurer(&assets),
+        Transform::from_translation(spawn.translation() + Vec3::X * 2.0),
     ));
 }
 

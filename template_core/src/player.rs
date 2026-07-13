@@ -1,5 +1,5 @@
 //! Player character: a physics-driven capsule moved with camera-relative
-//! input. Placeholder capsule mesh until the animated character in step 4.
+//! input, visualized by an animated character scene parented to the capsule.
 //!
 //! The controller is deliberately simple (dynamic body + velocity control,
 //! no jump — out of genre scope). If character feel ever needs more
@@ -9,6 +9,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
+use crate::animation::CharacterAnimations;
 use crate::camera_rig::ThirdPersonCamera;
 use crate::controls::PlayerAction;
 use crate::levels::PlayerSpawn;
@@ -47,8 +48,7 @@ fn spawn_player(
     mut commands: Commands,
     players: Query<(), With<Player>>,
     spawn_points: Query<&GlobalTransform, With<PlayerSpawn>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>,
 ) {
     if !players.is_empty() {
         return;
@@ -57,19 +57,32 @@ fn spawn_player(
         return;
     };
     let position = spawn.translation() + Vec3::Y * spawn_height();
-    commands.spawn((
-        Name::new("Player"),
-        Player,
-        DespawnOnExit(AppState::InGame),
-        Mesh3d(meshes.add(Capsule3d::new(CAPSULE_RADIUS, CAPSULE_LENGTH))),
-        MeshMaterial3d(materials.add(Color::srgb(0.8, 0.6, 0.2))),
-        Transform::from_translation(position),
-        RigidBody::Dynamic,
-        Collider::capsule(CAPSULE_RADIUS, CAPSULE_LENGTH),
-        LockedAxes::ROTATION_LOCKED,
-        Friction::new(0.3),
-        PlayerAction::default_input_map(),
-    ));
+    commands
+        .spawn((
+            Name::new("Player"),
+            Player,
+            DespawnOnExit(AppState::InGame),
+            Transform::from_translation(position),
+            Visibility::default(),
+            RigidBody::Dynamic,
+            Collider::capsule(CAPSULE_RADIUS, CAPSULE_LENGTH),
+            LockedAxes::ROTATION_LOCKED,
+            Friction::new(0.3),
+            PlayerAction::default_input_map(),
+        ))
+        .with_children(|parent| {
+            // Model origin is at the feet; the capsule origin is its center.
+            // KayKit characters face +Z, entity forward is Bevy's -Z: yaw 180°.
+            parent.spawn((
+                Name::new("PlayerModel"),
+                WorldAssetRoot(assets.load(
+                    GltfAssetLabel::Scene(0).from_asset("characters/adventurers/Knight.glb"),
+                )),
+                CharacterAnimations::kaykit_adventurer(&assets),
+                Transform::from_xyz(0.0, -(CAPSULE_LENGTH / 2.0 + CAPSULE_RADIUS), 0.0)
+                    .with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
+            ));
+        });
     info!("player spawned at {position}");
 }
 

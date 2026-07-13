@@ -81,10 +81,10 @@ The Blender-as-level-editor pipeline.
 
 **Verify**
 
-- [ ] Character walks around the Step 2 test level, collides with obstacles,
+- [x] Character walks around the Step 2 test level, collides with obstacles,
       handles ramps, and cannot escape the map.
-- [ ] Camera follows smoothly, never clips through level geometry, zooms.
-- [ ] Rebinding a key in one place (the input map) changes the control.
+- [x] Camera follows smoothly, never clips through level geometry, zooms.
+- [x] Rebinding a key in one place (the input map) changes the control.
 
 ## Step 4 — Animation pipeline
 
@@ -97,11 +97,18 @@ retargeting. Do it early enough to change course cheaply.
   (idle / walk / run / action), crossfade times, driven by controller velocity.
 - Document the Mixamo fallback path: FBX → Blender conversion script → glTF.
 - Record which pack/rig the template blesses as its default.
+  **Decided: KayKit Adventurers 2.0 (`Rig_Medium`)** — characters and shared
+  animation libraries under `assets/characters/adventurers/`, retargeted onto
+  character scenes at runtime by `CharacterAnimationPlugin` (clips address
+  bones by name path, which all pack characters share). Mixamo fallback:
+  `docs/mixamo-pipeline.md`.
 
 **Verify**
 
-- [ ] Player character idles, blends to walk, blends to run based on speed —
-      no popping, no T-posing, no disappearing mesh.
+- [x] Player character idles, blends to walk, blends to run based on speed —
+      no popping, no T-posing, no disappearing mesh. (Transitions blend into
+      the new clip from its first frame — phase-synced walk↔run blending was
+      considered and deliberately left out of scope.)
 - [ ] A second character from the same pack reuses the same animation set
       without code changes.
 - [ ] The Mixamo fallback doc has been executed once end-to-end on a real

@@ -44,8 +44,10 @@ files in `assets_src/` (editable sources) and exported as `.glb` into
 - **Stable names.** Object names end up on Bevy entities as `Name` components
   and appear in logs — rename deliberately, not accidentally.
 - **Orientation:** the exporter converts Blender's Z-up to glTF's Y-up
-  automatically; author levels normally. (Character facing conventions get
-  pinned down in roadmap step 4.)
+  automatically; author levels normally. Character rigs face **+Z** in glTF
+  (KayKit's convention), while Bevy entity forward is **-Z** — character
+  scenes are parented to their logic entity with a 180° yaw (see
+  `spawn_player`).
 
 ## Gameplay data: custom properties
 

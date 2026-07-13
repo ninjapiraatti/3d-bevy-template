@@ -2,6 +2,7 @@
 //!
 //! One Bevy plugin per concern; games compose the plugins they need.
 
+pub mod animation;
 pub mod camera_rig;
 pub mod controls;
 pub mod dev_scene;
@@ -10,6 +11,7 @@ pub mod menus;
 pub mod player;
 pub mod states;
 
+pub use animation::{CharacterAnimationPlugin, CharacterAnimations};
 pub use camera_rig::{ThirdPersonCamera, ThirdPersonCameraPlugin};
 pub use controls::{ControlsPlugin, PlayerAction};
 pub use dev_scene::DevScenePlugin;

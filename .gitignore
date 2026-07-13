@@ -4,4 +4,9 @@
 *.blend1
 *.blend2
 
+# Raw asset-pack downloads live in assets_src/ subfolders (they contain
+# FBX/OBJ sources); only the glTF copies under assets/ are committed.
+# Top-level .blend sources in assets_src/ stay committed.
+/assets_src/*/
+
 .DS_Store
