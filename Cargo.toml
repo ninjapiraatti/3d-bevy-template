@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = ["game", "template_core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+bevy = "0.19"
+
+# Fast iteration: light optimization for workspace code, full for dependencies
+# (Bevy is unusably slow at opt-level 0, and deps rarely rebuild).
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

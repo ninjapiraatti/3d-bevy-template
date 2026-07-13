@@ -1,0 +1,7 @@
+/target
+
+# Blender backup files
+*.blend1
+*.blend2
+
+.DS_Store

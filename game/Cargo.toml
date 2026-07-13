@@ -1,0 +1,15 @@
+[package]
+name = "game"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bevy = { workspace = true }
+template_core = { path = "../template_core" }
+
+[features]
+# Dynamic linking cuts incremental link times dramatically but must not be
+# used in shipped builds: `cargo build --release --no-default-features`.
+default = ["dev"]
+dev = ["bevy/dynamic_linking"]

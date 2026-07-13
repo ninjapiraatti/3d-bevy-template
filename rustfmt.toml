@@ -1,0 +1,2 @@
+# Default rustfmt settings, kept explicit so editors and CI agree.
+edition = "2024"
