@@ -14,12 +14,11 @@ Two layouts exist, and both work:
 - **Shared-rig packs** (KayKit, Quaternius): characters ship *without*
   animations; clips live in separate library files built on the same rig.
   Any character from the pack plays any library clip.
-- **Self-contained characters**: mesh, rig, and clips in one file (this is
-  also what the Mixamo fallback produces — see `docs/mixamo-pipeline.md`).
+- **Self-contained characters**: mesh, rig, and clips in one file.
 
-A character is only usable if it's available as `.glb`/`.gltf` — FBX-only
-packs go through the Mixamo/Blender conversion path first. FBX never enters
-the repo.
+A character is only usable if it's available as `.glb`/`.gltf`; FBX never
+enters the repo. Converting FBX sources (e.g. Mixamo) to glTF in Blender is
+possible but outside this template's scope.
 
 ## 1. Download into `assets_src/`
 

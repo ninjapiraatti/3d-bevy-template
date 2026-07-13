@@ -2,7 +2,10 @@
 
 A Bevy template for 3rd-person games: adventure, squad mechanics and strategy.
 Desktop only (Windows/macOS/Linux). Levels are authored in Blender and imported
-as glTF; characters and animations come from glTF-native asset packs.
+as glTF; characters and animations come from glTF-native asset packs
+(see [docs/CHARACTERS.md](docs/CHARACTERS.md)). FBX-only sources such as
+Mixamo are not supported — convert them to glTF in Blender yourself if you
+need them.
 
 See [ROADMAP.md](ROADMAP.md) for the build plan and current status.
 

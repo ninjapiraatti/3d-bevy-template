@@ -64,10 +64,11 @@ For multi-step tasks, state a brief plan:
   "Verify" checklist before starting the next. If a step forces a decision the
   roadmap left open (see its crate-decision table), record the choice and the
   reason in ROADMAP.md when making it.
-- Asset pipeline is **Blender → glTF** exclusively. No FBX in the repo; FBX
-  sources get converted via the documented Blender path first. Characters and
-  animations come from glTF-native packs (KayKit, Quaternius, Kenney) —
-  the project owner prefers buying/skipping rigging and animation work.
+- Asset pipeline is **Blender → glTF** exclusively. No FBX in the repo, and
+  no FBX conversion support (descoped in step 4; DIY note in the README).
+  Characters and animations come from glTF-native packs (KayKit, Quaternius,
+  Kenney) — the project owner prefers buying/skipping rigging and animation
+  work. Bringing a pack in: `docs/CHARACTERS.md`.
 - Levels are authored in **Blender, not in code**. Gameplay data (spawn points,
   triggers, patrol waypoints) is authored in Blender via the marker convention
   established in roadmap Step 2.

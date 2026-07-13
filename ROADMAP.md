@@ -95,13 +95,13 @@ retargeting. Do it early enough to change course cheaply.
   (KayKit / Quaternius Universal Animation Library / Kenney).
 - Thin animation-controller layer over Bevy's `AnimationGraph`: named states
   (idle / walk / run / action), crossfade times, driven by controller velocity.
-- Document the Mixamo fallback path: FBX → Blender conversion script → glTF.
 - Record which pack/rig the template blesses as its default.
   **Decided: KayKit Adventurers 2.0 (`Rig_Medium`)** — characters and shared
   animation libraries under `assets/characters/adventurers/`, retargeted onto
   character scenes at runtime by `CharacterAnimationPlugin` (clips address
-  bones by name path, which all pack characters share). Mixamo fallback:
-  `docs/mixamo-pipeline.md`.
+  bones by name path, which all pack characters share). A Mixamo/FBX fallback
+  path was documented, then descoped: the template is glTF-native only
+  (README mentions the DIY conversion route).
 
 **Verify**
 
@@ -109,10 +109,8 @@ retargeting. Do it early enough to change course cheaply.
       no popping, no T-posing, no disappearing mesh. (Transitions blend into
       the new clip from its first frame — phase-synced walk↔run blending was
       considered and deliberately left out of scope.)
-- [ ] A second character from the same pack reuses the same animation set
+- [x] A second character from the same pack reuses the same animation set
       without code changes.
-- [ ] The Mixamo fallback doc has been executed once end-to-end on a real
-      Mixamo download and the result plays in-game.
 
 ## Step 5 — Save / load
 
@@ -216,8 +214,9 @@ The squad/strategy layer on top of everything prior.
   Bevy editor ships).
 - Networking/multiplayer.
 - Combat depth (damage/health beyond what NPC behaviors need as a demo).
-- Custom rigging/retargeting tooling — tiered animation sourcing instead
-  (glTF packs → Mixamo+Blender script → manual retargeting, in that order).
+- Custom rigging/retargeting tooling — animation sourcing is glTF-native
+  packs only. Converting FBX sources (e.g. Mixamo) to glTF in Blender is
+  possible but DIY (brief mention in the README, nothing more).
 
 ## Open crate decisions (resolve in the step that needs them)
 
