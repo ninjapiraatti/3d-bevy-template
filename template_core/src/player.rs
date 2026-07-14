@@ -15,7 +15,7 @@ use crate::camera_rig::ThirdPersonCamera;
 use crate::controls::PlayerAction;
 use crate::levels::PlayerSpawn;
 use crate::npc_ai::{Faction, PLAYER_FACTION};
-use crate::states::{AppState, PauseState};
+use crate::states::{AppState, CameraMode, PauseState};
 
 pub struct PlayerPlugin;
 
@@ -41,7 +41,15 @@ impl Plugin for PlayerPlugin {
                 Update,
                 (spawn_player, hydrate_player, respawn_fallen).run_if(in_state(AppState::InGame)),
             )
-            .add_systems(Update, move_player.run_if(in_state(PauseState::Running)));
+            .add_systems(
+                Update,
+                move_player.run_if(
+                    in_state(PauseState::Running).and_then(in_state(CameraMode::ThirdPerson)),
+                ),
+            )
+            // In top-down mode WASD pans the camera and nothing drives the
+            // player; kill leftover velocity so it doesn't run off forever.
+            .add_systems(OnEnter(CameraMode::TopDown), halt_player);
     }
 }
 
@@ -160,6 +168,13 @@ fn camera_relative_direction(camera_forward: Vec3, input: Vec2) -> Vec3 {
     let forward = Vec3::new(camera_forward.x, 0.0, camera_forward.z).normalize_or_zero();
     let right = forward.cross(Vec3::Y).normalize_or_zero();
     (right * input.x + forward * input.y).clamp_length_max(1.0)
+}
+
+fn halt_player(mut players: Query<&mut LinearVelocity, With<Player>>) {
+    for mut velocity in &mut players {
+        velocity.x = 0.0;
+        velocity.z = 0.0;
+    }
 }
 
 fn respawn_fallen(

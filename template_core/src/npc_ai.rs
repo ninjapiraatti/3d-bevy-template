@@ -12,7 +12,7 @@ use bevy_landmass::AgentState;
 use bevy_landmass::prelude::*;
 
 use crate::levels::Waypoint;
-use crate::nav::Commanded;
+use crate::nav::{Commanded, Hold};
 use crate::npcs::Npc;
 use crate::player::{RUN_SPEED, WALK_SPEED};
 use crate::states::PauseState;
@@ -257,10 +257,11 @@ fn within_cone(forward: Vec3, to_target: Vec3, half_angle: f32) -> bool {
     forward.angle_between(to_target) <= half_angle
 }
 
-/// The state machine's output: each NPC's landmass target and speed. Chasing
-/// overrides the assigned behavior; a player move order (`Commanded`) owns
-/// the target until fulfilled. Walk on behavior, run on chase, which is what
-/// the animation controller turns into walk/run clips.
+/// The state machine's output: each NPC's landmass target and speed. A
+/// stop/hold order (`Hold`) trumps everything; chasing overrides the assigned
+/// behavior; a player move order (`Commanded`) owns the target until
+/// fulfilled. Walk on behavior, run on chase, which is what the animation
+/// controller turns into walk/run clips.
 fn drive_behaviors(
     mut commands: Commands,
     mut npcs: Query<
@@ -270,6 +271,7 @@ fn drive_behaviors(
             &mut AgentTarget3d,
             &mut AgentSettings,
             &AgentState,
+            Option<&Hold>,
             Option<&Chasing>,
             Option<&Commanded>,
             Option<&mut PatrolProgress>,
@@ -279,9 +281,24 @@ fn drive_behaviors(
     >,
     waypoints: Query<(&Waypoint, &GlobalTransform)>,
 ) {
-    for (npc, behavior, mut target, mut settings, state, chasing, commanded, patrol, wander) in
-        &mut npcs
+    for (
+        npc,
+        behavior,
+        mut target,
+        mut settings,
+        state,
+        hold,
+        chasing,
+        commanded,
+        patrol,
+        wander,
+    ) in &mut npcs
     {
+        if hold.is_some() {
+            settings.desired_speed = WALK_SPEED;
+            *target = AgentTarget3d::None;
+            continue;
+        }
         if let Some(chasing) = chasing {
             settings.desired_speed = RUN_SPEED;
             *target = AgentTarget3d::Entity(chasing.target);

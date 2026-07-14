@@ -72,6 +72,15 @@ npc = bpy.context.active_object
 npc.name = "NpcSpawn"
 npc["marker"] = "npc_spawn"
 
+# Step 8: two more player-faction units near the spawn, so drag-select has a
+# squad of three to work with.
+for i, (x, y, character) in enumerate([(1.5, -6.5, "Mage"), (-1.5, -6.5, "Ranger")]):
+    bpy.ops.object.empty_add(type="PLAIN_AXES", location=(x, y, 0.1))
+    squad = bpy.context.active_object
+    squad.name = f"SquadSpawn.{i}"
+    squad["marker"] = "npc_spawn"
+    squad["character"] = character
+
 # Step 7: a hostile patroller looping the west side of the map (route A),
 # and the waypoints it follows. Order is authored explicitly so the loop
 # direction is deliberate, not alphabetical.

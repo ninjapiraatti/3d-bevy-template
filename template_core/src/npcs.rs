@@ -21,8 +21,8 @@ pub struct Npc;
 #[derive(Component)]
 struct NpcSpawned;
 
-const CAPSULE_RADIUS: f32 = 0.35;
-const CAPSULE_LENGTH: f32 = 1.0;
+pub(crate) const CAPSULE_RADIUS: f32 = 0.35;
+pub(crate) const CAPSULE_LENGTH: f32 = 1.0;
 
 impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {

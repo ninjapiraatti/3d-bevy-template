@@ -24,12 +24,27 @@ pub enum PauseState {
     Paused,
 }
 
+/// Which control scheme drives the game: third-person follow (adventure) or
+/// top-down RTS (squad/strategy). Both act on the same world and the same
+/// camera entity; systems of each scheme gate on this state. A sub-state of
+/// [`AppState::InGame`] so every new game starts in third person and leaving
+/// the game discards the mode.
+#[derive(SubStates, Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[source(AppState = AppState::InGame)]
+#[states(scoped_entities)]
+pub enum CameraMode {
+    #[default]
+    ThirdPerson,
+    TopDown,
+}
+
 pub struct AppStatePlugin;
 
 impl Plugin for AppStatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<AppState>()
             .add_sub_state::<PauseState>()
+            .add_sub_state::<CameraMode>()
             .add_systems(Update, toggle_pause.run_if(in_state(AppState::InGame)))
             .add_systems(OnEnter(PauseState::Paused), pause_time)
             .add_systems(OnExit(PauseState::Paused), resume_time)

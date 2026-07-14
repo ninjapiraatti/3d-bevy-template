@@ -14,12 +14,19 @@ impl Plugin for ControlsPlugin {
     }
 }
 
+/// One action set for both control schemes ([`CameraMode`]): systems gate on
+/// the mode, so the same physical input can drive different actions per mode
+/// (left mouse is `CommandMove` in third person but `Select` in top-down).
+/// `Move` and `Zoom` are deliberately shared — they mean "directional input"
+/// and "zoom" to whichever camera controller is active.
+///
+/// [`CameraMode`]: crate::states::CameraMode
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
 pub enum PlayerAction {
     #[actionlike(DualAxis)]
     Move,
     Run,
-    /// Order agents to a clicked point (left mouse button by default).
+    /// Order the squad to a clicked point in third person (left mouse).
     CommandMove,
     /// Hold to orbit the camera (right mouse button by default).
     Orbit,
@@ -27,6 +34,16 @@ pub enum PlayerAction {
     OrbitDelta,
     #[actionlike(Axis)]
     Zoom,
+    /// Select units — click or drag a box — in top-down mode (left mouse).
+    Select,
+    /// Order selected units to a clicked point in top-down mode (right mouse).
+    Command,
+    /// Held while commanding turns the order into an attack-move (left ctrl).
+    AttackModifier,
+    /// Stop selected units and hold position (H).
+    StopHold,
+    /// Switch between the third-person and top-down control schemes (Tab).
+    ToggleCameraMode,
 }
 
 impl PlayerAction {
@@ -39,6 +56,14 @@ impl PlayerAction {
         map.insert(Self::Orbit, MouseButton::Right);
         map.insert_dual_axis(Self::OrbitDelta, MouseMove::default());
         map.insert_axis(Self::Zoom, MouseScrollAxis::Y);
+
+        // Squad/strategy scheme (top-down mode). Mouse-driven by design;
+        // no gamepad bindings for it.
+        map.insert(Self::Select, MouseButton::Left);
+        map.insert(Self::Command, MouseButton::Right);
+        map.insert(Self::AttackModifier, KeyCode::ControlLeft);
+        map.insert(Self::StopHold, KeyCode::KeyH);
+        map.insert(Self::ToggleCameraMode, KeyCode::Tab);
 
         map.insert_dual_axis(Self::Move, GamepadStick::LEFT);
         map.insert(Self::Run, GamepadButton::LeftTrigger);

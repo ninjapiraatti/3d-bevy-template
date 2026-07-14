@@ -9,7 +9,7 @@ use moonshine_save::prelude::Save;
 
 use crate::controls::PlayerAction;
 use crate::player::Player;
-use crate::states::{AppState, PauseState};
+use crate::states::{AppState, CameraMode, PauseState};
 
 pub struct ThirdPersonCameraPlugin;
 
@@ -53,7 +53,11 @@ impl Plugin for ThirdPersonCameraPlugin {
                 Update,
                 (orbit_and_zoom, follow_player)
                     .chain()
-                    .run_if(in_state(PauseState::Running)),
+                    // In top-down mode the RTS controller owns the camera
+                    // transform; the rig keeps its state for switching back.
+                    .run_if(
+                        in_state(PauseState::Running).and_then(in_state(CameraMode::ThirdPerson)),
+                    ),
             );
     }
 }

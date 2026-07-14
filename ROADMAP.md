@@ -185,10 +185,10 @@ cross-level verification is out of the template's scope.)
 
 **Verify**
 
-- [ ] A patrolling enemy spots the player entering its sight cone (and not
+- [x] A patrolling enemy spots the player entering its sight cone (and not
       through walls), chases, and returns to patrol after losing them.
-- [ ] Behaviors are swappable per-entity in data without code changes.
-- [ ] Animation controller from Step 4 reflects NPC state (walk on patrol,
+- [x] Behaviors are swappable per-entity in data without code changes.
+- [x] Animation controller from Step 4 reflects NPC state (walk on patrol,
       run on chase).
 
 ## Step 8 — Squad selection and commands
@@ -203,6 +203,21 @@ The squad/strategy layer on top of everything prior.
 - RTS-style top-down camera mode, toggleable with the third-person camera —
   same world, two control schemes (the adventure/strategy duality of the
   template).
+  **Decided:** `CameraMode` sub-state of `InGame` (`ThirdPerson` default /
+  `TopDown`), toggled with Tab; one shared camera entity driven by whichever
+  controller the mode enables (a second camera entity would fight bevy_ui's
+  default-camera pick and complicate saves). Third-person bindings are
+  unchanged; top-down binds LMB select, RMB command, Ctrl+RMB attack-move,
+  H stop/hold, and reuses the `Move`/`Zoom` actions for camera pan/zoom.
+  Commands address the selection, and an *empty selection means the whole
+  squad* — which is exactly what third-person click-to-move (step 6) now is.
+  The player character is not a commandable unit (downstream games add
+  `Commandable` + a landmass agent for a full-RTS hero). Group movement =
+  landmass local avoidance plus ring-formation destination offsets snapped
+  to the navmesh. Attack-move is a stub by design: the order carries
+  `CommandKind::AttackMove` (movement identical to move) for downstream
+  combat systems to read; stop/hold is a `Hold` component that also blocks
+  the step 7 behavior FSM until the next order.
 
 **Verify**
 
