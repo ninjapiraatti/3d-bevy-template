@@ -15,3 +15,5 @@ moonshine-save = { workspace = true }
 bevy_world_serialization = { workspace = true }
 bevy_landmass = { workspace = true }
 serde_json = { workspace = true }
+serde = { workspace = true }
+ron = { workspace = true }

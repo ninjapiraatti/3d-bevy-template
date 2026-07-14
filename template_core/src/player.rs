@@ -15,6 +15,7 @@ use crate::camera_rig::ThirdPersonCamera;
 use crate::controls::PlayerAction;
 use crate::levels::PlayerSpawn;
 use crate::npc_ai::{Faction, PLAYER_FACTION};
+use crate::settings::GameSettings;
 use crate::states::{AppState, CameraMode, PauseState};
 
 pub struct PlayerPlugin;
@@ -90,10 +91,15 @@ fn hydrate_player(
     players: Query<Entity, (With<Player>, Without<Collider>)>,
     spawn_points: Query<(), With<PlayerSpawn>>,
     assets: Res<AssetServer>,
+    // Absent when a game composes its plugins without SettingsPlugin.
+    settings: Option<Res<GameSettings>>,
 ) {
     if spawn_points.is_empty() {
         return;
     }
+    let input_map = settings
+        .map(|settings| settings.input_map.clone())
+        .unwrap_or_else(PlayerAction::default_input_map);
     for entity in &players {
         commands
             .entity(entity)
@@ -106,7 +112,7 @@ fn hydrate_player(
                 Friction::new(0.3),
                 LinearVelocity::default(),
                 Faction(PLAYER_FACTION.into()),
-                PlayerAction::default_input_map(),
+                input_map.clone(),
             ))
             .with_children(|parent| {
                 // Model origin is at the feet; the capsule origin is its center.

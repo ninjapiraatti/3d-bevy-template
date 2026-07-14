@@ -5,6 +5,7 @@
 
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub struct ControlsPlugin;
 
@@ -21,7 +22,7 @@ impl Plugin for ControlsPlugin {
 /// and "zoom" to whichever camera controller is active.
 ///
 /// [`CameraMode`]: crate::states::CameraMode
-#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
+#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect, Serialize, Deserialize)]
 pub enum PlayerAction {
     #[actionlike(DualAxis)]
     Move,

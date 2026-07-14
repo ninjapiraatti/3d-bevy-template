@@ -1,9 +1,10 @@
 use avian3d::PhysicsPlugins;
 use bevy::prelude::*;
 use template_core::{
-    AppStatePlugin, CharacterAnimationPlugin, ControlsPlugin, DevScenePlugin, LevelPlugin,
-    MenuPlugin, NavigationPlugin, NpcAiPlugin, NpcPlugin, PlayerPlugin, RtsCameraPlugin,
-    SavePlugin, SquadPlugin, ThirdPersonCameraPlugin,
+    AppStatePlugin, CharacterAnimationPlugin, ControlsPlugin, DevScenePlugin,
+    DiagnosticsOverlayPlugin, GameAudioPlugin, LevelPlugin, MenuPlugin, NavigationPlugin,
+    NpcAiPlugin, NpcPlugin, PlayerPlugin, RtsCameraPlugin, SavePlugin, SettingsPlugin, SquadPlugin,
+    ThirdPersonCameraPlugin,
 };
 
 fn main() {
@@ -22,20 +23,27 @@ fn main() {
             }),
             PhysicsPlugins::default(),
         ))
+        // App shell: states, menus, persistence, input, presentation.
         .add_plugins((
             AppStatePlugin,
             MenuPlugin,
             LevelPlugin,
             DevScenePlugin,
             ControlsPlugin,
+            SettingsPlugin,
+            SavePlugin,
+            GameAudioPlugin,
+            DiagnosticsOverlayPlugin,
+        ))
+        // Gameplay: characters, cameras, navigation, AI, squad layer.
+        .add_plugins((
             PlayerPlugin,
             CharacterAnimationPlugin,
             ThirdPersonCameraPlugin,
-            SavePlugin,
+            RtsCameraPlugin,
             NavigationPlugin,
             NpcPlugin,
             NpcAiPlugin,
-            RtsCameraPlugin,
             SquadPlugin,
         ))
         .run();

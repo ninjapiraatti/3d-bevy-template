@@ -221,11 +221,12 @@ The squad/strategy layer on top of everything prior.
 
 **Verify**
 
-- [ ] Drag-select three units, right-click across the map: all three arrive
+- [x] Drag-select three units, right-click across the map: all three arrive
       without piling into one spot or shoving each other off ledges.
-- [ ] Camera toggles between third-person-follow and top-down RTS mode at
+- [x] Camera toggles between third-person-follow and top-down RTS mode at
       runtime; both control schemes work in the same session.
-- [ ] Selected/unselected state is always visually unambiguous.
+- [x] Selected/unselected state is always visually unambiguous.
+      (Owner sign-off 2026-07-14.)
 
 ## Step 9 — Settings, polish, and template ergonomics
 
@@ -236,6 +237,19 @@ The squad/strategy layer on top of everything prior.
 - Template docs: "how to start a game from this template" walkthrough,
   per-plugin README notes, the Blender pipeline doc finalized.
 - Tag `v0.1.0`.
+  **Decided:** settings persist as `settings.ron` in the working directory
+  (ron + serde, both already transitive deps) with the *whole* leafwing
+  `InputMap` serialized — any rebinding survives, mouse and gamepad included,
+  and leafwing stays (the crate table's "revisit bevy_enhanced_input" came to
+  nothing: rebinding = mutating the map, no UI-crate needed). Old files keep
+  loading via `#[serde(default)]` — the save-file tolerance policy. Rebinds
+  replace only an action's *keyboard* binding (`settings::rebind_key`).
+  Window modes offered: windowed + borderless (exclusive fullscreen is
+  finicky cross-platform; out of scope). Audio = built-in `bevy_audio` with
+  the `wav` feature; placeholder sounds are script-generated WAVs
+  (`tools/audio/`, stdlib-only, license-free) — the spinner cube is the
+  positional emitter, the camera the listener. Diagnostics on F1, matching
+  the F3 debug-key convention.
 
 **Verify**
 
