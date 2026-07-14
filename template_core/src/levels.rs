@@ -3,6 +3,9 @@
 //!
 //! Conventions are documented in `docs/blender-pipeline.md`. Currently:
 //! - `marker = "player_spawn"` → [`PlayerSpawn`]
+//! - `marker = "navmesh"` → [`NavMeshSource`]
+//! - `marker = "npc_spawn"` (+ optional NPC properties) → [`NpcSpawn`]
+//! - `marker = "waypoint"` → [`Waypoint`]
 //! - `collider = "trimesh"` → static physics collider from the node's meshes
 
 use avian3d::prelude::*;
@@ -45,9 +48,27 @@ pub struct PlayerSpawn;
 pub struct NavMeshSource;
 
 /// Where an NPC appears; authored in Blender as an empty with
-/// `marker = "npc_spawn"`. Consumed by the NPC plugin.
+/// `marker = "npc_spawn"`. Consumed by the NPC plugin, which resolves the
+/// optional string properties (and their defaults) into typed components.
+#[derive(Component, Debug, Default)]
+pub struct NpcSpawn {
+    /// `faction = "<name>"`; defaults to the player's faction.
+    pub faction: Option<String>,
+    /// `behavior = "idle" | "wander" | "patrol"`; defaults to idle.
+    pub behavior: Option<String>,
+    /// `route = "<name>"`: the waypoint route a patrol behavior follows.
+    pub route: Option<String>,
+    /// `character = "<file stem>"` under `assets/characters/adventurers/`.
+    pub character: Option<String>,
+}
+
+/// A patrol waypoint; authored in Blender as an empty with
+/// `marker = "waypoint"`. `route` groups waypoints, `order` sorts them.
 #[derive(Component, Debug)]
-pub struct NpcSpawn;
+pub struct Waypoint {
+    pub route: String,
+    pub order: f64,
+}
 
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
@@ -121,7 +142,25 @@ fn process_gltf_extras(
                 }
                 "npc_spawn" => {
                     info!("marker npc_spawn on {name:?} ({entity})");
-                    commands.entity(entity).insert(NpcSpawn);
+                    let get =
+                        |key: &str| parsed.get(key).and_then(|v| v.as_str()).map(String::from);
+                    commands.entity(entity).insert(NpcSpawn {
+                        faction: get("faction"),
+                        behavior: get("behavior"),
+                        route: get("route"),
+                        character: get("character"),
+                    });
+                }
+                "waypoint" => {
+                    info!("marker waypoint on {name:?} ({entity})");
+                    commands.entity(entity).insert(Waypoint {
+                        route: parsed
+                            .get("route")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("A")
+                            .to_string(),
+                        order: parsed.get("order").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                    });
                 }
                 other => warn!("unknown marker '{other}' on {name:?}"),
             }
@@ -175,6 +214,42 @@ mod tests {
         let npc = spawn_with_extras(&mut app, r#"{"marker": "npc_spawn"}"#);
         assert!(app.world().entity(navmesh).contains::<NavMeshSource>());
         assert!(app.world().entity(npc).contains::<NpcSpawn>());
+    }
+
+    #[test]
+    fn npc_spawn_properties_are_captured() {
+        let mut app = extras_app();
+        let bare = spawn_with_extras(&mut app, r#"{"marker": "npc_spawn"}"#);
+        let spawn = app.world().entity(bare).get::<NpcSpawn>().unwrap();
+        assert!(spawn.faction.is_none() && spawn.behavior.is_none());
+
+        let configured = spawn_with_extras(
+            &mut app,
+            r#"{"marker": "npc_spawn", "faction": "raiders", "behavior": "patrol",
+                "route": "A", "character": "Rogue_Hooded"}"#,
+        );
+        let spawn = app.world().entity(configured).get::<NpcSpawn>().unwrap();
+        assert_eq!(spawn.faction.as_deref(), Some("raiders"));
+        assert_eq!(spawn.behavior.as_deref(), Some("patrol"));
+        assert_eq!(spawn.route.as_deref(), Some("A"));
+        assert_eq!(spawn.character.as_deref(), Some("Rogue_Hooded"));
+    }
+
+    #[test]
+    fn waypoint_marker_parses_route_and_order() {
+        let mut app = extras_app();
+        let waypoint = spawn_with_extras(
+            &mut app,
+            r#"{"marker": "waypoint", "route": "B", "order": 2}"#,
+        );
+        let waypoint = app.world().entity(waypoint).get::<Waypoint>().unwrap();
+        assert_eq!(waypoint.route, "B");
+        assert_eq!(waypoint.order, 2.0);
+
+        let defaulted = spawn_with_extras(&mut app, r#"{"marker": "waypoint"}"#);
+        let waypoint = app.world().entity(defaulted).get::<Waypoint>().unwrap();
+        assert_eq!(waypoint.route, "A");
+        assert_eq!(waypoint.order, 0.0);
     }
 
     #[test]

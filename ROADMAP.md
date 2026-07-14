@@ -160,17 +160,26 @@ cross-level verification is out of the template's scope.)
 
 **Verify**
 
-- [ ] An NPC pathfinds around obstacles to a clicked destination in the test
+- [x] An NPC pathfinds around obstacles to a clicked destination in the test
       level — no wall clipping, no stuck-on-corner within a 2-minute watch.
-- [ ] Re-exporting a modified level from Blender produces a correct new
-      navmesh without hand-editing.
-- [ ] Debug overlay toggles on a keypress and matches observed behavior.
+- [x] Re-exporting a modified level from Blender produces a correct new
+      navmesh without hand-editing. (Owner sign-off 2026-07-14. Reminder the
+      decision above implies: an added obstacle is only respected once its
+      hole is also cut into the navmesh mesh — both edits live in the same
+      .blend.)
+- [x] Debug overlay toggles on a keypress (F3) and matches observed behavior.
 
 ## Step 7 — NPC behaviors and perception
 
 - Behavior layer (evaluate `big-brain` utility AI — suits squad/strategy) with
   three reference behaviors: idle/wander, patrol (waypoints from Blender
   markers), chase-when-spotted.
+  **Decided: hand-rolled FSM** (see crate table) — behaviors and factions are
+  authored as `npc_spawn` properties in Blender (`behavior`, `faction`,
+  `route`, `character`), patrol waypoints as `marker = "waypoint"` empties.
+  Chase-when-spotted is an aggro overlay on any behavior, driven by
+  perception and the `FactionRelations` resource (directional
+  aggressor→victim pairs; the demo default is raiders→player).
 - Perception: sight cone + range with line-of-sight raycast; aggro/de-aggro.
 - Faction/team component so "enemy" vs "friendly NPC" is data, not code.
 
@@ -245,4 +254,4 @@ The squad/strategy layer on top of everything prior.
 | Character controller | **Decided (step 3): hand-rolled** dynamic capsule + velocity control on avian — no jumps in genre scope. bevy-tnua 0.32 (Bevy 0.19-ready) is the upgrade path if feel demands it. | Step 3 |
 | Save/load | **Decided (step 5): moonshine-save 0.7** (+ its bevy_world_serialization for filter types) — targets Bevy 0.19, released 2026-06. bevy_save's latest (2.0.1, 2025-08) is pinned to Bevy 0.16 — stale. Hand-rolled fallback not needed. | Step 5 |
 | Navmesh | **Decided (step 6): bevy_landmass 0.12** — targets Bevy 0.19 (2026-06 release), brings steering + local avoidance for step 8. Both original candidates are stale: vleue_navigator 0.15 targets Bevy 0.18 (no activity since 2026-01), oxidized_navigation since 2024-12. Trade-off: landmass consumes navmeshes rather than generating them — the navmesh is authored in Blender as a hidden `marker = "navmesh"` mesh, consistent with Blender-as-editor. | Step 6 |
-| AI | big-brain vs bevy_behave | Step 7 |
+| AI | **Decided (step 7): hand-rolled FSM** in `npc_ai.rs` — both candidates fail the 0.19 rule: big-brain is dead (last release 2024-11, Bevy 0.15), bevy_behave 0.5 targets Bevy 0.18 with a ~quarterly cadence. bevior_tree 0.11 is 0.19-ready but tiny (single maintainer, code-defined trees). Three reference behaviors don't justify the dependency; the NPC AI plugin is the swap point if a downstream game needs real BT/utility AI. | Step 7 |

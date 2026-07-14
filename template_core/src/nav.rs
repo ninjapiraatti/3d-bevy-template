@@ -11,7 +11,7 @@ use bevy::window::PrimaryWindow;
 use bevy_landmass::debug::{EnableLandmassDebug, Landmass3dDebugPlugin};
 use bevy_landmass::nav_mesh::bevy_mesh_to_landmass_nav_mesh;
 use bevy_landmass::prelude::*;
-use bevy_landmass::{NavMeshHandle, PointSampleDistance3d};
+use bevy_landmass::{AgentState, NavMeshHandle, PointSampleDistance3d};
 use leafwing_input_manager::prelude::*;
 
 use crate::camera_rig::ThirdPersonCamera;
@@ -21,6 +21,22 @@ use crate::player::Player;
 use crate::states::{AppState, PauseState};
 
 pub struct NavigationPlugin;
+
+/// Agents that obey the player's move commands (player-faction NPCs).
+/// Step 8's selection will scope commands within this set.
+#[derive(Component)]
+pub struct Commandable;
+
+/// A move order in flight: the destination of the last click command.
+/// While present, the behavior FSM (`npc_ai`) leaves the agent's target
+/// alone; cleared on arrival so the assigned behavior resumes.
+#[derive(Component)]
+pub struct Commanded(pub Vec3);
+
+/// Arrival slack for clearing [`Commanded`]: the agent transform sits at the
+/// capsule center (~1 m above the clicked ground point), and landmass may
+/// settle slightly short of the exact point.
+const COMMAND_DONE_DISTANCE: f32 = 2.0;
 
 /// How fast agents turn to face their direction of travel (same feel as the
 /// player controller).
@@ -41,7 +57,12 @@ impl Plugin for NavigationPlugin {
         .add_systems(Update, toggle_debug)
         .add_systems(
             Update,
-            (build_islands, command_move, apply_agent_velocity)
+            (
+                build_islands,
+                command_move,
+                finish_commands,
+                apply_agent_velocity,
+            )
                 .run_if(in_state(PauseState::Running)),
         );
     }
@@ -131,14 +152,15 @@ fn build_islands(
     }
 }
 
-/// Left click sends every agent toward the clicked point (scoped to the
-/// selected units when step 8 adds selection).
+/// Left click sends every commandable agent toward the clicked point (scoped
+/// to the selected units when step 8 adds selection).
 fn command_move(
+    mut commands: Commands,
     actions: Query<&ActionState<PlayerAction>, With<Player>>,
     windows: Query<&Window, With<PrimaryWindow>>,
     cameras: Query<(&Camera, &GlobalTransform), With<ThirdPersonCamera>>,
     spatial: SpatialQuery,
-    mut agents: Query<&mut AgentTarget3d>,
+    mut agents: Query<(Entity, &mut AgentTarget3d), With<Commandable>>,
 ) {
     let Ok(actions) = actions.single() else {
         return;
@@ -166,8 +188,24 @@ fn command_move(
     };
     let point = ray.origin + *ray.direction * hit.distance;
     info!("move command to {point}");
-    for mut target in &mut agents {
+    for (agent, mut target) in &mut agents {
         *target = AgentTarget3d::Point(point);
+        commands.entity(agent).insert(Commanded(point));
+    }
+}
+
+/// Clears a fulfilled move order. The distance check guards against a stale
+/// `ReachedTarget` (landmass may not have processed the new target yet).
+fn finish_commands(
+    mut commands: Commands,
+    agents: Query<(Entity, &GlobalTransform, &Commanded, &AgentState)>,
+) {
+    for (agent, transform, commanded, state) in &agents {
+        if *state == AgentState::ReachedTarget
+            && transform.translation().distance(commanded.0) < COMMAND_DONE_DISTANCE
+        {
+            commands.entity(agent).remove::<Commanded>();
+        }
     }
 }
 
@@ -203,5 +241,47 @@ fn apply_agent_velocity(
 fn toggle_debug(input: Res<ButtonInput<KeyCode>>, mut enable: ResMut<EnableLandmassDebug>) {
     if input.just_pressed(KeyCode::F3) {
         **enable = !**enable;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_clears_on_arrival_but_not_before() {
+        let mut app = App::new();
+        app.add_systems(Update, finish_commands);
+        let point = Vec3::new(2.0, 0.0, 3.0);
+        let arrived = app
+            .world_mut()
+            .spawn((
+                GlobalTransform::from_translation(point + Vec3::Y),
+                Commanded(point),
+                AgentState::ReachedTarget,
+            ))
+            .id();
+        let moving = app
+            .world_mut()
+            .spawn((
+                GlobalTransform::from_translation(Vec3::ZERO),
+                Commanded(point),
+                AgentState::Moving,
+            ))
+            .id();
+        // A stale ReachedTarget from a previous target must not clear a
+        // fresh command to a distant point.
+        let stale = app
+            .world_mut()
+            .spawn((
+                GlobalTransform::from_translation(point + Vec3::X * 10.0),
+                Commanded(point),
+                AgentState::ReachedTarget,
+            ))
+            .id();
+        app.update();
+        assert!(!app.world().entity(arrived).contains::<Commanded>());
+        assert!(app.world().entity(moving).contains::<Commanded>());
+        assert!(app.world().entity(stale).contains::<Commanded>());
     }
 }

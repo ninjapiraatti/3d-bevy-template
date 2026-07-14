@@ -72,6 +72,26 @@ npc = bpy.context.active_object
 npc.name = "NpcSpawn"
 npc["marker"] = "npc_spawn"
 
+# Step 7: a hostile patroller looping the west side of the map (route A),
+# and the waypoints it follows. Order is authored explicitly so the loop
+# direction is deliberate, not alphabetical.
+for i, (x, y) in enumerate([(-9, -9), (-9, 9), (-4, 9), (-4, -9)]):
+    bpy.ops.object.empty_add(type="SPHERE", radius=0.3, location=(x, y, 0.1))
+    waypoint = bpy.context.active_object
+    waypoint.name = f"WaypointA.{i}"
+    waypoint["marker"] = "waypoint"
+    waypoint["route"] = "A"
+    waypoint["order"] = i
+
+bpy.ops.object.empty_add(type="PLAIN_AXES", location=(-9, -9, 0.1))
+enemy = bpy.context.active_object
+enemy.name = "EnemySpawn"
+enemy["marker"] = "npc_spawn"
+enemy["faction"] = "raiders"
+enemy["behavior"] = "patrol"
+enemy["route"] = "A"
+enemy["character"] = "Rogue_Hooded"
+
 
 def add_navmesh():
     """Walkable-area mesh (hidden at runtime; marker = "navmesh").

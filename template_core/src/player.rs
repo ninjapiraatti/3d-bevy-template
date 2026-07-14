@@ -14,6 +14,7 @@ use crate::animation::CharacterAnimations;
 use crate::camera_rig::ThirdPersonCamera;
 use crate::controls::PlayerAction;
 use crate::levels::PlayerSpawn;
+use crate::npc_ai::{Faction, PLAYER_FACTION};
 use crate::states::{AppState, PauseState};
 
 pub struct PlayerPlugin;
@@ -96,6 +97,7 @@ fn hydrate_player(
                 LockedAxes::ROTATION_LOCKED,
                 Friction::new(0.3),
                 LinearVelocity::default(),
+                Faction(PLAYER_FACTION.into()),
                 PlayerAction::default_input_map(),
             ))
             .with_children(|parent| {

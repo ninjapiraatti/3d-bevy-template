@@ -58,12 +58,23 @@ Gameplay data is authored as **object custom properties**
 | Property | Value | Effect in Bevy |
 |---|---|---|
 | `marker` | `player_spawn` | `PlayerSpawn` component (use on an empty) |
-| `marker` | `npc_spawn` | An NPC is spawned here (use on an empty) |
+| `marker` | `npc_spawn` | An NPC is spawned here (use on an empty); configured by the extra properties below |
+| `marker` | `waypoint` | A patrol waypoint (use on an empty). `route` (string, default `"A"`) groups waypoints into a route; `order` (number, default 0) sorts them within it |
 | `marker` | `navmesh` | The mesh becomes the landmass navmesh (walkable area) and is hidden at runtime. Author it as a simple mesh over walkable ground, kept an agent-radius (~0.4 m) away from obstacles; polygons must share vertices to count as connected. |
 | `collider` | `trimesh` | Static physics collider generated from the object's meshes |
 
-Property values must be strings. Unknown values log a warning at load rather
-than failing, so typos are visible in the terminal.
+Extra properties on an `npc_spawn` empty (all optional strings):
+
+| Property | Value | Effect |
+|---|---|---|
+| `faction` | any name, e.g. `raiders` | Which side the NPC is on. Defaults to `player` (friendly and click-commandable). Hostility between factions is data too: the `FactionRelations` resource, whose template default makes `raiders` attack the player's side. |
+| `behavior` | `idle` / `wander` / `patrol` | What the NPC does when not chasing. Defaults to `idle`. Hostile NPCs chase a spotted enemy regardless of behavior and resume it on de-aggro. |
+| `route` | a route name | Which `waypoint` route a `patrol` behavior follows. Defaults to `A`. |
+| `character` | glTF file stem, e.g. `Rogue_Hooded` | Model to spawn, from `assets/characters/adventurers/`. Defaults to `Barbarian`. |
+
+Property values must be strings (except `order`, a number). Unknown values
+log a warning at load rather than failing, so typos are visible in the
+terminal.
 
 ## Exporting
 
